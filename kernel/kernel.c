@@ -1,15 +1,8 @@
+#include"../drivers/ports.h"
+#include"../drivers/screen.h"
+
 void main(){
-
-//create a pointer to a char, and point to the first text cell of video memory
-char *video_memory = (char*)0xb8000;
-
-//display 'X' in the top-left of screen
-    *video_memory = 'H';
-    *(video_memory + 1)='U';
-    *(video_memory + 2)='P';
-    *(video_memory + 3) ='E';
-    *(video_memory + 4) ='N';
-    *(video_memory + 5) ='G';
-    *(video_memory + 6) ='Y';
-    *(video_memory + 7) ='U';
+    kprint_char('X', 0, 0, RED_ON_WHITE);
+    clear_screen();
+    kprint("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 }
