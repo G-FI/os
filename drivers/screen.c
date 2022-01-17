@@ -1,5 +1,6 @@
 #include"ports.h"
 #include"screen.h"
+#include"../kernel/util.h"
 
 //helper function pre-declearation
 int get_screen_offset(int row, int col);
@@ -7,6 +8,7 @@ int get_cursor_offset();
 void set_cursor_offset(int offset);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
+int handl_screen(int offset);
 
 int kprint_char(char c, int row, int col, char attr);
 
@@ -23,10 +25,11 @@ void clear_screen(){
 }
 
 void kprint_at(char *msg, int row, int col){
+    int offset;
     for(int i = 0; msg[i] != 0; i++){
-        kprint_char(msg[i], row, col, 0);
-        row = -1; 
-        col = -1;
+        offset = kprint_char(msg[i], row, col, 0);
+        row = get_offset_row(offset); 
+        col = get_offset_col(offset);
     }
 }
 
@@ -59,6 +62,7 @@ int kprint_char(char c, int row, int col, char attr){
         video_mem[offset + 1] = attr;
         offset += 2;
     }
+    offset = handle_screen(offset);
     set_cursor_offset(offset);
     return offset;
 }
@@ -91,4 +95,19 @@ int get_offset_row(int offset){
 
 int get_offset_col(int offset){
     return (offset/2) % MAX_COLS;
+}
+
+int handle_screen(int offset){
+    if(offset >= MAX_ROWS * MAX_COLS     * 2){
+        for(int row = 1; row < MAX_ROWS; row++){
+            mem_copy((char *)(VIDEO_ADDRESS + get_screen_offset(row, 0)),
+                    (char *)(VIDEO_ADDRESS + get_screen_offset(row - 1, 0)), MAX_COLS * 2);
+        }
+        char *last_line = get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS;
+        for(int i =0 ; i < MAX_COLS * 2; i++){
+            last_line[i] = 0;
+        }
+        offset = get_screen_offset(MAX_ROWS - 1, 0);
+    }
+    return offset;  
 }
