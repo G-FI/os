@@ -8,7 +8,7 @@ int get_cursor_offset();
 void set_cursor_offset(int offset);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
-int handl_screen(int offset);
+int handle_screen(int offset);
 
 int kprint_char(char c, int row, int col, char attr);
 
