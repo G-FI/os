@@ -1,11 +1,10 @@
 #扩展成匹配后面pattern的文件
-C_SOURCES = ${wildcard kernel/*.c drivers/*.c cpu/*.c}
-HEADERS = ${wildcard kernel/*.h drivers/*.h cpu/*.h}
+C_SOURCES = ${wildcard kernel/*.c libc/*.c drivers/*.c cpu/*.c}
+HEADERS = ${wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h}
 #变量值替换（var: .c = .o）
 OBJ = ${C_SOURCES:.c=.o cpu/interrupt.o}
 
 CFLAGS = -g
-
 
 run: os-image.bin
 	qemu-system-i386  -nographic -curses -fda $<
@@ -40,7 +39,7 @@ os-image.bin: boot/bootstrap.bin kernel.bin
 
 clean:
 	rm -rf *.bin *.o os-image.bin *.elf
-	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o cpu/*.o
+	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o cpu/*.o libc/*.o
 
 
 

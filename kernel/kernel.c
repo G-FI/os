@@ -3,14 +3,40 @@
 #include "../cpu/isr.h"
 #include "../cpu/timer.h"
 #include "../drivers/keyboard.h"
+#include "kernel.h"
+#include "../libc/string.h"
+#include "../libc/mem.h"
 
-void main() {
+
+void main(){
     isr_install();
-    __asm__ __volatile__ ("sti");
-    
-    kprint("timer init\n");
-    /* init_timer(1); */
-    
-    init_keyboard();
+    //register timer and keyboard event
+    irq_install();
 
+    kprint("Type something, it will go through the kernel\nType END to halt the CPU\n> ");
+}
+
+
+void user_input(char *buf){
+    if(strcmp(buf, "END") == 0){
+        kprint("STOPING THE CPU, BYE\n");
+        asm volatile("hlt");
+    }else if(strcmp(buf, "MALLOC") == 0){
+        kprint("TESTING MALLOC:\n");
+        uint32 pa;
+        int pg = kmalloc(1, &pa);
+        char pg_buf[8];
+        int_to_ascii(pg, pg_buf);
+        char pa_buf[32];
+        hex_to_ascii(pa, pa_buf);
+
+        kprint("PAGE NUMBER: ");
+        kprint(pg_buf);
+        kprint(", PHYSICIAL ADDRESS: ");
+        kprint(pa_buf);
+        kprint("\n");
+    }
+    kprint("got input: ");
+    kprint(buf);
+    kprint("\n>");
 }

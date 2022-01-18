@@ -1,6 +1,8 @@
-#include"ports.h"
 #include"screen.h"
-#include"../kernel/util.h"
+#include"../cpu/ports.h"
+#include "../libc/string.h"
+#include"../libc/mem.h"
+
 
 //helper function pre-declearation
 int get_screen_offset(int row, int col);
@@ -9,8 +11,8 @@ void set_cursor_offset(int offset);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
 int handle_screen(int offset);
-
 int kprint_char(char c, int row, int col, char attr);
+
 
 /*public API*/
 void clear_screen(){
@@ -37,6 +39,17 @@ void kprint(char *msg){
     kprint_at(msg, -1, -1);
 }
 
+void kprint_backspace(){
+    int offset = get_cursor_offset() - 2;
+    int row = get_offset_row(offset);
+    int col = get_offset_col(offset);
+    kprint_char(' ', row, col, 0);
+    set_cursor_offset(offset);
+}   
+
+/***************************************************
+ * *******helper function used by kprint_x**********
+ * *************************************************/
 /*write c at (row, col), set cursor to next charactor, and return the offset*/
 int kprint_char(char c, int row, int col, char attr){
     unsigned char *video_mem = (unsigned char *)VIDEO_ADDRESS;
@@ -57,7 +70,7 @@ int kprint_char(char c, int row, int col, char attr){
         //in case of row and col == 1, row will be change 
         row = get_offset_row(offset);
         offset  = get_screen_offset(row + 1, 0);
-    }else{
+    }else{  
         video_mem[offset] = c;
         video_mem[offset + 1] = attr;
         offset += 2;
@@ -67,8 +80,33 @@ int kprint_char(char c, int row, int col, char attr){
     return offset;
 }
 
+//if offset beyond the screen, it will scroll dwon, else do nothing
+int handle_screen(int offset){
+    if(offset >= MAX_ROWS * MAX_COLS * 2){
+        for(int row = 1; row < MAX_ROWS; row++){
+            mem_copy((char *)(VIDEO_ADDRESS + get_screen_offset(row, 0)),
+                    (char *)(VIDEO_ADDRESS + get_screen_offset(row - 1, 0)), MAX_COLS * 2);
+        }
+        char *last_line = get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS;
+        for(int i =0 ; i < MAX_COLS * 2; i++){
+            last_line[i] = 0;
+        }
+        offset = get_screen_offset(MAX_ROWS - 1, 0);
+    }
+    return offset;  
+}
+
+
 int get_screen_offset(int row, int col){
     return (row * MAX_COLS + col) * 2;
+}
+
+int get_offset_row(int offset){
+    return (offset/2) / MAX_COLS;
+}
+
+int get_offset_col(int offset){
+    return (offset/2) % MAX_COLS;
 }
 
 int get_cursor_offset(){
@@ -89,25 +127,3 @@ void set_cursor_offset(int offset){
     port_byte_out(REG_SCREEN_DATA, (unsigned char)(offset & 0xff));
 }
 
-int get_offset_row(int offset){
-    return (offset/2) / MAX_COLS;
-}
-
-int get_offset_col(int offset){
-    return (offset/2) % MAX_COLS;
-}
-
-int handle_screen(int offset){
-    if(offset >= MAX_ROWS * MAX_COLS     * 2){
-        for(int row = 1; row < MAX_ROWS; row++){
-            mem_copy((char *)(VIDEO_ADDRESS + get_screen_offset(row, 0)),
-                    (char *)(VIDEO_ADDRESS + get_screen_offset(row - 1, 0)), MAX_COLS * 2);
-        }
-        char *last_line = get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS;
-        for(int i =0 ; i < MAX_COLS * 2; i++){
-            last_line[i] = 0;
-        }
-        offset = get_screen_offset(MAX_ROWS - 1, 0);
-    }
-    return offset;  
-}

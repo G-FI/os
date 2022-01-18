@@ -1,6 +1,8 @@
 #include "isr.h"
 #include "idt.h"
-#include "../drivers/ports.h"
+#include "timer.h"
+#include "ports.h"
+#include "../drivers/keyboard.h"
 #include "../drivers/screen.h"
 
 
@@ -75,6 +77,13 @@ void isr_install(){
     install_idt();
 
 }
+
+void irq_install(){
+    asm volatile ("sti");
+    init_timer(50);
+    init_keyboard();
+}
+
 
 /* To print the message which defines every exception */
 char *exception_messages[] = {

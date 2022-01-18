@@ -1,5 +1,5 @@
-#ifndef ISR_H
-#define ISR_H
+#ifndef ISR_H_
+#define ISR_H_
 
 #include "types.h"
 
@@ -82,15 +82,15 @@ typedef struct {
    uint32 eip, cs, eflags, useresp, ss; /* Pushed by the processor automatically */
 } registers_t;
 
-//install all isr including exception and handerware interrupt (isr and irq)
+//install all isr including exception and handerware interrupt to IDT(isr and irq)
 void isr_install();
-//handler exception
-void isr_handler(registers_t r);
+void isr_handler(registers_t r);//handle exception
 
-
+//handle hardware interrupt
 typedef void(*irq_t)(registers_t);
 void irq_register(int n, irq_t hanlder);
-//handle hardware interrupt
 void irq_handler(registers_t regs);
 
-#endif
+//register hardware interrupt events
+void irq_install();
+#endif //ISR_H_
