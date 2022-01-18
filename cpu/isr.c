@@ -1,9 +1,11 @@
 #include "isr.h"
 #include "idt.h"
+#include "../drivers/ports.h"
 #include "../drivers/screen.h"
 
 
 void isr_install(){
+    //set exception handlers in idt 
     set_idt_gate(0, (uint32)isr0);
     set_idt_gate(1, (uint32)isr1);
     set_idt_gate(2, (uint32)isr2);
@@ -35,7 +37,41 @@ void isr_install(){
     set_idt_gate(28, (uint32)isr28);
     set_idt_gate(29, (uint32)isr29);
     set_idt_gate(30, (uint32)isr30);
-    set_idt_gate(31, (uint32)isr31); 
+    set_idt_gate(31, (uint32)isr31);
+
+ // Remap the PIC ??TODO
+    port_byte_out(0x20, 0x11);
+    port_byte_out(0xA0, 0x11);
+    port_byte_out(0x21, 0x20);
+    port_byte_out(0xA1, 0x28);
+    port_byte_out(0x21, 0x04);
+    port_byte_out(0xA1, 0x02);
+    port_byte_out(0x21, 0x01);
+    port_byte_out(0xA1, 0x01);
+    port_byte_out(0x21, 0x0);
+    port_byte_out(0xA1, 0x0); 
+
+    /*set hardware interrupts in idt*/
+    //master pic 32-39 
+    set_idt_gate(32, (uint32)irq0);
+    set_idt_gate(33, (uint32)irq1);
+    set_idt_gate(34, (uint32)irq2);
+    set_idt_gate(35, (uint32)irq3);
+    set_idt_gate(36, (uint32)irq4);
+    set_idt_gate(37, (uint32)irq5);
+    set_idt_gate(38, (uint32)irq6);
+    set_idt_gate(39, (uint32)irq7);
+    //slave pic 40-47
+    set_idt_gate(40, (uint32)irq8);
+    set_idt_gate(41, (uint32)irq9);
+    set_idt_gate(42, (uint32)irq10);
+    set_idt_gate(43, (uint32)irq11);
+    set_idt_gate(44, (uint32)irq12);
+    set_idt_gate(45, (uint32)irq13);
+    set_idt_gate(46, (uint32)irq14);
+    set_idt_gate(47, (uint32)irq15);
+
+
     install_idt();
 
 }
@@ -81,9 +117,23 @@ char *exception_messages[] = {
 
 void isr_handler(registers_t regs){
     kprint("receive interrupt:");
-   // kprint(itoa(regs.int_no));
-   
     kprint("\n");
     kprint(exception_messages[regs.int_no]);
     kprint("\n");
+}
+
+irq_t irq_handlers[256];
+void irq_register(int n, irq_t handler){
+    irq_handlers[n] = handler;
+}
+
+void irq_handler(registers_t regs){
+    //must sent EIO to PIC, or they will block other interrupts
+    if(regs.int_no >= 40) port_byte_out(0xA0, 0x20); //slave 0x20->EIO
+    port_byte_out(0x20, 0x20); //master
+
+    //handler the intrupter in a more moduler way
+    if(irq_handlers[regs.int_no] != 0){
+        irq_handlers[regs.int_no](regs);
+    }
 }
